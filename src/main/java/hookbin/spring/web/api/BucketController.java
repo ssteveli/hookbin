@@ -58,6 +58,19 @@ public class BucketController {
         return new ResponseEntity<>(resolveLinks(bucketId, request), HttpStatus.OK);
     }
     
+    @RequestMapping(value = "/{bucketId}/lastRequest", method = {RequestMethod.GET})
+    public ResponseEntity<CapturedRequest> getLastRequest(
+            @PathVariable("bucketId") String bucketId) {
+        
+        List<CapturedRequest> requests = repo.getRequests(bucketId);
+        
+        if (requests == null || requests.size() == 0) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        
+        return new ResponseEntity<>(resolveLinks(bucketId, requests.get(0)), HttpStatus.OK);
+    }
+    
     @RequestMapping(value = "/{bucketId}", method = {RequestMethod.GET})
     public ResponseEntity<Bucket> getBucket(@PathVariable("bucketId") String bucketId) {
         Bucket b = repo.getBucket(bucketId);
@@ -93,6 +106,7 @@ public class BucketController {
         
         if (b.getRequestCount() > 0) {
             b.add(linkTo(methodOn(BucketController.class).getRequests(b.getBucketId())).withRel("requests")); 
+            b.add(linkTo(methodOn(BucketController.class).getLastRequest(b.getBucketId())).withRel("lastRequest"));
         }
         
         return b;
