@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,9 +34,13 @@ public class BuckerReceiverController {
     @RequestMapping(
             value = "/{bucketId}", 
             method = {RequestMethod.POST})
-    public void receiveWebhook(
+    public ResponseEntity<?> receiveWebhook(
             @PathVariable("bucketId") @NotNull @NotBlank String bucketId,
             HttpServletRequest request) throws IOException {
+        
+        if (repo.getBucket(bucketId) == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         
         // read in the body
         BufferedReader reader = new BufferedReader(new InputStreamReader(request.getInputStream()));
@@ -58,6 +64,8 @@ public class BuckerReceiverController {
                 .headers(headers)
                 .build();
         repo.save(bucketId, r);
-        log.debug("saved captured request for bucketId {}: {}", bucketId, r);
+        log.debug("saved payload length {} for bucketId {}", r.getBody().length(), bucketId);
+        
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

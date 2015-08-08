@@ -71,6 +71,16 @@ public class BucketReceiveFT extends AbstractTest {
     }
     
     @Test
+    public void nonExistentBucketShouldNotBeAbleToReceive() {
+        given()
+            .body(UUID.randomUUID().toString())
+        .when()
+            .post("../" + UUID.randomUUID().toString())
+        .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+    
+    @Test
     public void bucketCanReceivePosts() {
         for (int i=1; i<=3; i++) {
             // post something to the bucket
