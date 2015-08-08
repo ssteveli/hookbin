@@ -2,6 +2,7 @@ package hookbin.spring.web.api;
 
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
 import hookbin.model.Bucket;
 import hookbin.model.CapturedRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/buckets")
+@Slf4j
 public class BucketController {
     
     @Autowired
@@ -91,11 +93,22 @@ public class BucketController {
     
     @RequestMapping(method = {RequestMethod.POST})
     public ResponseEntity<?> createBucket() {
-        String id = idGenerator.generateId();
-        Bucket b = repo.createBucket(id);
+        Bucket b = null;
+        for (int i=0; i<100; i++) {
+            String id = idGenerator.generateId();
+            b = repo.createBucket(id);
+            if (b != null) {
+                break;
+            }
+        }
+        
+        if (b == null) {
+            log.error("error creating bucket, duplicate id problem?");
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         
         HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(linkTo(methodOn(BucketController.class).getBucket(id)).toUri());
+        headers.setLocation(linkTo(methodOn(BucketController.class).getBucket(b.getBucketId())).toUri());
         
         return new ResponseEntity<Bucket>(resolveLinks(b), headers, HttpStatus.CREATED);
     }
