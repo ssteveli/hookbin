@@ -20,14 +20,14 @@ import com.jayway.restassured.http.ContentType;
 @SpringApplicationConfiguration(classes = Application.class)
 @WebAppConfiguration
 @IntegrationTest("server.port:0")
-public class CreateBucketFT extends AbstractTest {
+public class CreateBucketFT extends AbstractBucketTest {
 
     @Test
     public void shouldBeAbleToCreateABucket() {
         given()
             .accept(ContentType.JSON)
         .when()
-            .post("/buckets")
+            .post(bucketUri)
         .then()
             .statusCode(HttpStatus.SC_CREATED)
             .header("Location", allOf(isValid(), canFollow()))
