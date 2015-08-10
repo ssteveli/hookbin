@@ -13,4 +13,5 @@ public interface CapturedRequestRepository {
     void save(String bucketId, CapturedRequest request);
     CapturedRequest findById(String bucketId, String requestId);
     List<CapturedRequest> getRequests(String bucketId);
+    void deleteRequests(String bucketId);
 }

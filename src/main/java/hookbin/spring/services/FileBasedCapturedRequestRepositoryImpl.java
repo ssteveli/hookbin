@@ -58,6 +58,24 @@ public class FileBasedCapturedRequestRepositoryImpl implements CapturedRequestRe
         }
     }
 
+
+    @Override
+    public void deleteRequests(String bucketId) {
+        File bucket = new File(baseDir, bucketId);
+        if (!bucket.exists()) {
+            return;
+        }        
+     
+        for (File f : bucket.listFiles()) {
+            FileUtils.deleteQuietly(f);
+        }
+        
+        int remainingCount = bucket.listFiles().length;
+        if (remainingCount != 0) {
+            throw new IllegalStateException("error deleting all requests, " + remainingCount + " files are still present");
+        }
+    }
+    
     public List<CapturedRequest> getRequests(String bucketId) {
         File bucket = new File(baseDir, bucketId);
         if (!bucket.exists()) {

@@ -30,6 +30,20 @@ public class BucketController {
     @Autowired
     private CapturedRequestRepository repo;
     
+    @RequestMapping(value = "/{bucketId}/requests", method = {RequestMethod.DELETE})
+    public ResponseEntity<List<CapturedRequest>> deleteRequests(
+            @PathVariable("bucketId") String bucketId) {
+        Bucket bucket = repo.getBucket(bucketId);
+        
+        if (bucket == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        
+        repo.deleteRequests(bucketId);
+        
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
     @RequestMapping(value = "/{bucketId}/requests", method = {RequestMethod.GET})
     public ResponseEntity<List<CapturedRequest>> getRequests(
             @PathVariable("bucketId") String bucketId) {
