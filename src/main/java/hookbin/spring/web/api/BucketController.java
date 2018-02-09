@@ -146,11 +146,7 @@ public class BucketController {
     @RequestMapping(value = "/{bucketId}/stream")
     public ResponseBodyEmitter streamingRequests(@PathVariable("bucketId") String bucketId, @RequestParam("jsonOnly") StreamContext.Type type) {
         final SseEmitter emitter = new SseEmitter();
-        streams.add(StreamContext.builder()
-                .bucketId(bucketId)
-                .emitter(emitter)
-                .type(type)
-                .build());
+        streams.add(new StreamContext(bucketId, emitter, type));
         
         return emitter;
     }
@@ -198,8 +194,6 @@ public class BucketController {
         return r;
     }
     
-    @Data
-    @Builder
     static class StreamContext {
         public enum Type {
             REQUEST,
@@ -209,7 +203,14 @@ public class BucketController {
         public final String bucketId;
         public final SseEmitter emitter;
         public final Type type;
-        @Builder.Default
         public boolean connected = true;
+        public StreamContext(String bucketId, SseEmitter emitter, Type type) {
+            super();
+            this.bucketId = bucketId;
+            this.emitter = emitter;
+            this.type = type;
+        }
+        
+        
     }
 }
