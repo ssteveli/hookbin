@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.hateoas.Resource;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -28,7 +29,7 @@ import hookbin.spring.Application;
 import hookbin.test.AbstractBucketTest;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Application.class)
+@SpringBootTest(classes = Application.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 public class BucketReceiveFT extends AbstractBucketTest {
     
     Resource<Bucket> bucket;
