@@ -1,8 +1,5 @@
 package hookbin.spring.web;
 
-import hookbin.model.CapturedRequest;
-import hookbin.spring.services.CapturedRequestRepository;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,10 +10,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 
-import lombok.extern.slf4j.Slf4j;
-
 import org.hibernate.validator.constraints.NotBlank;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,12 +18,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import hookbin.model.CapturedRequest;
+import hookbin.spring.services.CapturedRequestRepository;
+import hookbin.spring.web.api.BucketController;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
+@Data
 @RestController
 @Slf4j
 public class BuckerReceiverController {
-
-    @Autowired
-    private CapturedRequestRepository repo;
+    private final CapturedRequestRepository repo;
+    private final BucketController bucketController;
     
     @RequestMapping(
             value = "/{bucketId}", 
@@ -65,6 +65,8 @@ public class BuckerReceiverController {
                 .build();
         repo.save(bucketId, r);
         log.debug("saved payload length {} for bucketId {}", r.getBody().length(), bucketId);
+        
+        bucketController.broadcastCapturedRequest(bucketId, r);
         
         return new ResponseEntity<>(HttpStatus.OK);
     }

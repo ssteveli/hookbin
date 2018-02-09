@@ -1,34 +1,46 @@
 package hookbin.spring.web.api;
 
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
-import hookbin.model.Bucket;
-import hookbin.model.CapturedRequest;
-import hookbin.spring.BucketIdGenerator;
-import hookbin.spring.services.CapturedRequestRepository;
-import hookbin.spring.web.BuckerReceiverController;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import hookbin.model.Bucket;
+import hookbin.model.CapturedRequest;
+import hookbin.spring.BucketIdGenerator;
+import hookbin.spring.services.CapturedRequestRepository;
+import hookbin.spring.web.BuckerReceiverController;
+import hookbin.spring.web.api.BucketController.StreamContext.Type;
+import lombok.Builder;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
+@Data
 @RestController
 @RequestMapping("/api/buckets")
 @Slf4j
 public class BucketController {
+    private final BucketIdGenerator idGenerator;
+    private final CapturedRequestRepository repo;
+    private final ObjectMapper om;
     
-    @Autowired
-    private BucketIdGenerator idGenerator;
-    
-    @Autowired
-    private CapturedRequestRepository repo;
+    private List<StreamContext> streams = new ArrayList<>();
     
     @RequestMapping(value = "/{bucketId}/requests", method = {RequestMethod.DELETE})
     public ResponseEntity<List<CapturedRequest>> deleteRequests(
@@ -100,6 +112,10 @@ public class BucketController {
     
     @RequestMapping(value = "/{bucketId}", method = {RequestMethod.DELETE})
     public ResponseEntity<?> deleteBucket(@PathVariable("bucketId") String bucketId) {
+        streams.stream()
+            .filter(context -> StringUtils.equals(bucketId, context.bucketId))
+            .forEach(context -> context.emitter.complete());
+        
         repo.deleteBucket(bucketId);
         
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -127,9 +143,46 @@ public class BucketController {
         return new ResponseEntity<Bucket>(resolveLinks(b), headers, HttpStatus.CREATED);
     }
     
+    @RequestMapping(value = "/{bucketId}/stream")
+    public ResponseBodyEmitter streamingRequests(@PathVariable("bucketId") String bucketId, @RequestParam("jsonOnly") StreamContext.Type type) {
+        final SseEmitter emitter = new SseEmitter();
+        streams.add(StreamContext.builder()
+                .bucketId(bucketId)
+                .emitter(emitter)
+                .type(type)
+                .build());
+        
+        return emitter;
+    }
+    
+    public void broadcastCapturedRequest(String bucketId, CapturedRequest capturedRequest) {
+        streams.removeIf(context -> !context.connected);
+        
+        streams.stream()
+            .filter(context -> StringUtils.equals(bucketId, context.bucketId))
+            .forEach(context -> {
+                try {
+                    switch (context.type) {
+                    case BODY:
+                        context.emitter.send(capturedRequest.getBody());
+                        break;
+                    case REQUEST:
+                        context.emitter.send(capturedRequest);
+                        break;
+                    }
+                } catch (IOException e) {
+                    log.error("error sending captured request to sse stream for bucketId {}", bucketId, e);
+                    context.emitter.completeWithError(e);
+                    context.connected = false;
+                }
+            });
+    }
+    
     private Bucket resolveLinks(Bucket b) {
         b.add(linkTo(methodOn(BucketController.class).getBucket(b.getBucketId())).withSelfRel());
         b.add(linkTo(BuckerReceiverController.class).slash(b.getBucketId()).withRel("receive"));
+        b.add(linkTo(methodOn(BucketController.class).streamingRequests(b.getBucketId(), Type.REQUEST)).withRel("streamRequest"));
+        b.add(linkTo(methodOn(BucketController.class).streamingRequests(b.getBucketId(), Type.BODY)).withRel("streamBody"));
         
         if (b.getRequestCount() > 0) {
             b.add(linkTo(methodOn(BucketController.class).getRequests(b.getBucketId())).withRel("requests")); 
@@ -143,5 +196,20 @@ public class BucketController {
         r.add(linkTo(methodOn(BucketController.class).getRequest(bucketId, r.getRequestId())).withSelfRel());
         r.add(linkTo(methodOn(BucketController.class).getBucket(bucketId)).withRel("bucket"));
         return r;
+    }
+    
+    @Data
+    @Builder
+    static class StreamContext {
+        public enum Type {
+            REQUEST,
+            BODY
+        }
+        
+        public final String bucketId;
+        public final SseEmitter emitter;
+        public final Type type;
+        @Builder.Default
+        public boolean connected = true;
     }
 }

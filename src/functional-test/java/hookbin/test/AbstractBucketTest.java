@@ -5,6 +5,7 @@ import static hookbin.test.matcher.UrlMatcher.*;
 import static org.hamcrest.Matchers.*;
 
 import hookbin.model.Bucket;
+import hookbin.test.AbstractTest;
 
 import java.io.IOException;
 import java.net.URI;

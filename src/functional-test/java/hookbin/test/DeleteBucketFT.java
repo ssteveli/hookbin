@@ -1,9 +1,6 @@
 package hookbin.test;
 
-import static com.jayway.restassured.RestAssured.*;
-
-import hookbin.model.Bucket;
-import hookbin.spring.Application;
+import static com.jayway.restassured.RestAssured.given;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -12,27 +9,21 @@ import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.hateoas.Resource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
-@WebAppConfiguration
-@IntegrationTest("server.port:0")
+import hookbin.model.Bucket;
+import hookbin.spring.Application;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class)
 public class DeleteBucketFT extends AbstractBucketTest {
     
     Resource<Bucket> bucket;
-    
-    @Autowired
-    private ObjectMapper om;
     
     @Before
     public void setupBucket() throws JsonParseException, JsonMappingException, IOException {        

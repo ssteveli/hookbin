@@ -2,7 +2,7 @@ package hookbin.test;
 
 import org.junit.After;
 import org.junit.Before;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.hateoas.hal.Jackson2HalModule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +11,7 @@ import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 
 public abstract class AbstractTest {
-    @Value("${local.server.port}")
+    @LocalServerPort
     private int serverPort;
 
     @Before
