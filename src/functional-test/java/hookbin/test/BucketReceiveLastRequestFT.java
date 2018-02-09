@@ -1,10 +1,12 @@
 package hookbin.test;
 
-import static com.jayway.restassured.RestAssured.*;
-import static hookbin.test.matcher.UrlMatcher.*;
-import static org.hamcrest.Matchers.*;
-import hookbin.model.Bucket;
-import hookbin.spring.Application;
+import static com.jayway.restassured.RestAssured.given;
+import static hookbin.test.matcher.UrlMatcher.canFollow;
+import static hookbin.test.matcher.UrlMatcher.isValid;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -15,11 +17,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.IntegrationTest;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.hateoas.Resource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,10 +27,11 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.restassured.http.ContentType;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
-@WebAppConfiguration
-@IntegrationTest("server.port:0")
+import hookbin.model.Bucket;
+import hookbin.spring.Application;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class)
 public class BucketReceiveLastRequestFT extends AbstractTest {
     
     Resource<Bucket> bucket;
